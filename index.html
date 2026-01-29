@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emilia: Alternative World</title>
+    <style>
+        :root { --accent: #ff4081; --text: #ffffff; }
+        body { 
+            margin: 0; background: #050510; color: var(--text); font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; overflow: hidden; touch-action: manipulation;
+        }
+        #stars { position: fixed; inset: 0; background: radial-gradient(circle at center, #1b2735 0%, #000 100%); z-index: -1; opacity: 0.6; }
+        .top-bar { position: absolute; top: 20px; width: 90%; display: flex; justify-content: space-between; z-index: 10; }
+        .icon { font-size: 30px; cursor: pointer; filter: drop-shadow(0 0 8px var(--accent)); transition: 0.3s; }
+        #score { font-size: 55px; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px var(--accent); margin: 0; }
+        #user-info { font-size: 14px; opacity: 0.5; margin-bottom: 15px; }
+        #hero-img { height: 50vh; border-radius: 25px; transition: transform 0.1s; cursor: pointer; }
+        .jump { animation: bounce 0.4s ease; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.94) translateY(10px); } }
+        .modal { display: none; position: fixed; background: rgba(0,0,0,0.96); padding: 30px; border-radius: 30px; border: 2px solid var(--accent); z-index: 100; min-width: 260px; }
+        #reg { position: fixed; inset: 0; background: #050510; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        input { padding: 12px; border-radius: 10px; border: none; margin: 10px; width: 220px; background: #1a1a2e; color: white; border: 1px solid #333; }
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="stars"></div>
+    <div id="reg">
+        <h2 style="color:var(--accent)">Создание аккаунта</h2>
+        <input type="text" id="n-in" placeholder="Никнейм (макс 17)" maxlength="17">
+        <input type="password" placeholder="Пароль">
+        <button onclick="saveAcc()">Начать играть</button>
+    </div>
+    <div class="top-bar">
+        <div class="icon" onclick="openModal('sett')">⚙️</div>
+        <div class="icon" onclick="openModal('chars')">👥</div>
+    </div>
+    <div style="text-align: center;">
+        <p id="user-info">Загрузка...</p>
+        <h1 id="score">0</h1>
+        <button id="auto-btn" onclick="buyAuto()" style="margin: 15px 0; display: none;">Купить автоклик (1000)</button>
+    </div>
+    <div onclick="clickHero(event)"><img id="hero-img" src="https://i.pinimg.com/736x/c1/9d/9b/c19d9b04f7678122a27b8787f7b578c9.jpg"></div>
+    <div class="modal" id="sett">
+        <h3>Настройки</h3>
+        <select onchange="changeColor(this.value)"><option value="#ff4081">Розовый</option><option value="#ffffff">Белый</option><option value="#00f2fe">Голубой</option></select>
+        <button onclick="closeModal()">Закрыть</button>
+    </div>
+    <div class="modal" id="chars"><h3>Персонажи</h3><p>🔒 Секретные герои скоро...</p><button onclick="closeModal()">Назад</button></div>
+    <script>
+        let state = JSON.parse(localStorage.getItem('em_world_v3')) || { s: 0, n: '', c: '#ff4081', lv: 0, cost: 1000 };
+        function saveAcc() { state.n = document.getElementById('n-in').value || 'NoName'; document.getElementById('reg').style.display = 'none'; init(); }
+        function init() { if(state.n) document.getElementById('reg').style.display = 'none'; document.getElementById('user-info').innerText = `Игрок: ${state.n}`; changeColor(state.c); refresh(); }
+        function clickHero(e) { 
+            state.s++; const img = document.getElementById('hero-img');
+            img.classList.remove('jump'); void img.offsetWidth; img.classList.add('jump');
+            if(e) { const rect = img.getBoundingClientRect(); const x = (e.clientX - rect.left) / rect.width - 0.5; img.style.transform = `rotateY(${x * 35}deg)`; setTimeout(() => img.style.transform = 'rotateY(0deg)', 150); }
+            refresh();
+        }
+        function buyAuto() { if(state.s >= state.cost) { state.s -= state.cost; state.lv++; state.cost *= 2; refresh(); } }
+        function openModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+        function changeColor(hex) { state.c = hex; document.documentElement.style.setProperty('--accent', hex); }
+        function refresh() {
+            document.getElementById('score').innerText = Math.floor(state.s);
+            document.getElementById('auto-btn').style.display = (state.s >= 500 || state.lv > 0) ? 'inline-block' : 'none';
+            document.getElementById('auto-btn').innerText = `Автоклик (Ур. ${state.lv}) - ${state.cost}`;
+            localStorage.setItem('em_world_v3', JSON.stringify(state));
+        }
+        setInterval(() => { if(state.lv > 0) { state.s += (state.lv * 0.5); refresh(); } }, 1000);
+        init();
+    </script>
+</body>
+</html>
