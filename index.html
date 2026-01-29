@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Emilia: Magic World</title>
+    <title>Emilia: Ultra Clicker</title>
     <style>
         :root { --accent: #ff4081; }
         body { 
@@ -11,29 +11,33 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; overflow: hidden; touch-action: manipulation;
         }
-        /* Живой фон */
-        #bg-canvas { position: fixed; inset: 0; z-index: -1; }
+        canvas { position: fixed; inset: 0; z-index: -1; }
         
         .top-bar { position: absolute; top: 20px; width: 90%; display: flex; justify-content: space-between; z-index: 10; }
-        .icon { font-size: 30px; cursor: pointer; filter: drop-shadow(0 0 8px var(--accent)); transition: 0.3s; }
+        .icon { font-size: 30px; cursor: pointer; filter: drop-shadow(0 0 8px var(--accent)); }
         
-        #score { font-size: 60px; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px var(--accent); margin: 0; pointer-events: none; }
+        #score { font-size: 70px; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px var(--accent); margin: 10px 0; pointer-events: none; }
         
-        #hero-container { position: relative; cursor: pointer; }
-        #hero-img { height: 50vh; border-radius: 25px; transition: transform 0.1s; z-index: 5; }
+        #hero-img { 
+            height: 45vh; border-radius: 25px; cursor: pointer; 
+            transition: transform 0.1s; z-index: 5; position: relative;
+        }
         .jump { animation: bounce 0.3s ease; }
         @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.92); } }
 
-        /* Эффект +1 */
+        /* Эффект +1 с разлетом */
         .fly-text {
-            position: fixed; color: var(--accent); font-weight: bold; font-size: 24px;
+            position: fixed; color: var(--accent); font-weight: bold; font-size: 32px;
             pointer-events: none; animation: fly 0.8s ease-out forwards; z-index: 100;
+            text-shadow: 0 0 10px var(--accent);
         }
-        @keyframes fly { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px) scale(1.5); } }
+        @keyframes fly { 
+            0% { opacity: 1; transform: translate(0, 0); } 
+            100% { opacity: 0; transform: translate(var(--tw-x), -150px) scale(1.5); } 
+        }
 
-        .modal { display: none; position: fixed; background: rgba(0,0,0,0.96); padding: 30px; border-radius: 30px; border: 2px solid var(--accent); z-index: 200; min-width: 280px; }
-        .setting { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .modal { display: none; position: fixed; background: rgba(10,10,20,0.98); padding: 30px; border-radius: 30px; border: 2px solid var(--accent); z-index: 200; min-width: 280px; }
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
         
         #reg { position: fixed; inset: 0; background: #050510; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         input { padding: 12px; border-radius: 10px; border: 1px solid #333; margin: 10px; width: 220px; background: #111; color: white; }
@@ -41,18 +45,18 @@
 </head>
 <body>
     <canvas id="bg-canvas"></canvas>
+
     <div id="reg">
         <h2 style="color:var(--accent)">Регистрация</h2>
-        <input type="text" id="n-in" placeholder="Никнейм" maxlength="17">
-        <button onclick="saveAcc()">Начать приключение</button>
+        <input type="text" id="n-in" placeholder="Твой ник" maxlength="17">
+        <button onclick="saveAcc()">Начать</button>
     </div>
 
     <div class="top-bar">
         <div class="icon" onclick="openM('sett')">⚙️</div>
-        <div class="icon" onclick="openM('chars')">👥</div>
     </div>
 
-    <div style="text-align: center;">
+    <div style="text-align: center; z-index: 5;">
         <p id="user-info" style="opacity:0.6"></p>
         <h1 id="score">0</h1>
     </div>
@@ -63,34 +67,32 @@
 
     <div class="modal" id="sett">
         <h3>Настройки</h3>
-        <div class="setting">
-            <label>Цвет Текста/Неона:</label>
-            <select onchange="changeColor(this.value)">
-                <option value="#ff4081">Розовый Неон</option>
-                <option value="#ffffff">Белый Жемчуг</option>
-                <option value="#00f2fe">Голубой Лед</option>
-                <option value="#ff8c00">Оранжевый Закат</option>
-                <option value="#7fff00">Зеленый Лайм</option>
-                <option value="#9370db">Фиолетовый Маг</option>
-            </select>
-        </div>
+        <label>Цвет:</label>
+        <select id="color-select" onchange="changeColor(this.value)" style="width:100%; padding:8px; margin:10px 0;">
+            <option value="#ff4081">Розовый</option>
+            <option value="#ffffff">Белый</option>
+            <option value="#00f2fe">Голубой</option>
+            <option value="#ff8c00">Оранжевый</option>
+        </select>
+        <label>Громкость:</label>
+        <input type="range" id="vol" min="0" max="1" step="0.1" value="0.5" onchange="state.v = this.value">
         <button onclick="closeM()">Закрыть</button>
     </div>
 
-    <div class="modal" id="chars"><h3>Персонажи</h3><p>🔒 Скоро...</p><button onclick="closeM()">Назад</button></div>
-
     <script>
-        let state = JSON.parse(localStorage.getItem('em_world_v4')) || { s: 0, n: '', c: '#ff4081' };
+        let state = JSON.parse(localStorage.getItem('emilia_v5')) || { s: 0, n: '', c: '#ff4081', v: 0.5 };
+        let lastClickTime = 0;
         let isPressed = false;
+        const clickSound = new Audio('https://www.myinstants.com/media/sounds/anime-ah.mp3'); 
 
-        // Рисуем фон (звезды)
+        // Звезды
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let stars = [];
         function initStars() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             stars = [];
-            for(let i=0; i<100; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2, v: Math.random()*0.5});
+            for(let i=0; i<80; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5, v: Math.random()*0.3});
         }
         function drawStars() {
             ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -103,42 +105,63 @@
         }
         initStars(); drawStars();
 
-        function saveAcc() { state.n = document.getElementById('n-in').value || 'NoName'; init(); }
+        function saveAcc() { const v = document.getElementById('n-in').value; if(v) { state.n = v; init(); } }
         function init() { 
-            if(state.n) document.getElementById('reg').style.display = 'none';
-            document.getElementById('user-info').innerText = `Игрок: ${state.n}`;
-            changeColor(state.c); updateUI();
+            if(state.n) {
+                document.getElementById('reg').style.display = 'none';
+                document.getElementById('user-info').innerText = state.n;
+                changeColor(state.c); updateUI();
+            }
         }
 
         function clickHero(e) {
+            const now = Date.now();
+            // ЗАЩИТА: Если клик произошел слишком быстро после предыдущего (менее 10мс) - игнорируем
+            if (now - lastClickTime < 10) return;
+            lastClickTime = now;
+
             state.s++;
+            clickSound.volume = state.v;
+            clickSound.currentTime = 0;
+            clickSound.play().catch(()=>{});
+
             const img = document.getElementById('hero-img');
             img.classList.remove('jump'); void img.offsetWidth; img.classList.add('jump');
             
-            // Эффект +1
+            // +1 с разным вылетом
             const ft = document.createElement('div');
-            ft.className = 'fly-text'; ft.innerText = '+1';
+            ft.className = 'fly-text';
+            ft.innerText = '+1';
+            
+            // Случайный разлет влево-вправо (-50px до 50px)
+            const randomX = (Math.random() - 0.5) * 100;
+            ft.style.setProperty('--tw-x', `${randomX}px`);
+            
             ft.style.left = (e ? e.clientX : window.innerWidth/2) + 'px';
             ft.style.top = (e ? e.clientY : window.innerHeight/2) + 'px';
+            
             document.body.appendChild(ft);
             setTimeout(() => ft.remove(), 800);
 
             updateUI();
         }
 
-        // КЛАВИАТУРА: Пробел и Enter
+        // Клавиатура
         window.onkeydown = (e) => {
             if((e.code === 'Space' || e.code === 'Enter') && !isPressed) {
-                isPressed = true; clickHero();
+                isPressed = true;
+                clickHero(); // Здесь сработает защита по времени, если мышка уже нажата
             }
         };
-        window.onkeyup = (e) => { if(e.code === 'Space' || e.code === 'Enter') isPressed = false; };
+        window.onkeyup = () => isPressed = false;
 
         function openM(id) { document.getElementById(id).style.display = 'block'; }
         function closeM() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
         function changeColor(c) { state.c = c; document.documentElement.style.setProperty('--accent', c); }
-        function updateUI() { document.getElementById('score').innerText = state.s; localStorage.setItem('em_world_v4', JSON.stringify(state)); }
-        
+        function updateUI() { 
+            document.getElementById('score').innerText = state.s; 
+            localStorage.setItem('emilia_v5', JSON.stringify(state)); 
+        }
         init();
     </script>
 </body>
