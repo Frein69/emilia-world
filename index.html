@@ -3,73 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Emilia: Alternative World</title>
+    <title>Emilia: Magic World</title>
     <style>
-        :root { --accent: #ff4081; --text: #ffffff; }
+        :root { --accent: #ff4081; }
         body { 
-            margin: 0; background: #050510; color: var(--text); font-family: 'Segoe UI', sans-serif; 
+            margin: 0; background: #050510; color: white; font-family: 'Segoe UI', sans-serif; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; overflow: hidden; touch-action: manipulation;
         }
-        #stars { position: fixed; inset: 0; background: radial-gradient(circle at center, #1b2735 0%, #000 100%); z-index: -1; opacity: 0.6; }
+        /* Живой фон */
+        #bg-canvas { position: fixed; inset: 0; z-index: -1; }
+        
         .top-bar { position: absolute; top: 20px; width: 90%; display: flex; justify-content: space-between; z-index: 10; }
         .icon { font-size: 30px; cursor: pointer; filter: drop-shadow(0 0 8px var(--accent)); transition: 0.3s; }
-        #score { font-size: 55px; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px var(--accent); margin: 0; }
-        #user-info { font-size: 14px; opacity: 0.5; margin-bottom: 15px; }
-        #hero-img { height: 50vh; border-radius: 25px; transition: transform 0.1s; cursor: pointer; }
-        .jump { animation: bounce 0.4s ease; }
-        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.94) translateY(10px); } }
-        .modal { display: none; position: fixed; background: rgba(0,0,0,0.96); padding: 30px; border-radius: 30px; border: 2px solid var(--accent); z-index: 100; min-width: 260px; }
+        
+        #score { font-size: 60px; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px var(--accent); margin: 0; pointer-events: none; }
+        
+        #hero-container { position: relative; cursor: pointer; }
+        #hero-img { height: 50vh; border-radius: 25px; transition: transform 0.1s; z-index: 5; }
+        .jump { animation: bounce 0.3s ease; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.92); } }
+
+        /* Эффект +1 */
+        .fly-text {
+            position: fixed; color: var(--accent); font-weight: bold; font-size: 24px;
+            pointer-events: none; animation: fly 0.8s ease-out forwards; z-index: 100;
+        }
+        @keyframes fly { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px) scale(1.5); } }
+
+        .modal { display: none; position: fixed; background: rgba(0,0,0,0.96); padding: 30px; border-radius: 30px; border: 2px solid var(--accent); z-index: 200; min-width: 280px; }
+        .setting { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        
         #reg { position: fixed; inset: 0; background: #050510; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        input { padding: 12px; border-radius: 10px; border: none; margin: 10px; width: 220px; background: #1a1a2e; color: white; border: 1px solid #333; }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+        input { padding: 12px; border-radius: 10px; border: 1px solid #333; margin: 10px; width: 220px; background: #111; color: white; }
     </style>
 </head>
 <body>
-    <div id="stars"></div>
+    <canvas id="bg-canvas"></canvas>
     <div id="reg">
-        <h2 style="color:var(--accent)">Создание аккаунта</h2>
-        <input type="text" id="n-in" placeholder="Никнейм (макс 17)" maxlength="17">
-        <input type="password" placeholder="Пароль">
-        <button onclick="saveAcc()">Начать играть</button>
+        <h2 style="color:var(--accent)">Регистрация</h2>
+        <input type="text" id="n-in" placeholder="Никнейм" maxlength="17">
+        <button onclick="saveAcc()">Начать приключение</button>
     </div>
+
     <div class="top-bar">
-        <div class="icon" onclick="openModal('sett')">⚙️</div>
-        <div class="icon" onclick="openModal('chars')">👥</div>
+        <div class="icon" onclick="openM('sett')">⚙️</div>
+        <div class="icon" onclick="openM('chars')">👥</div>
     </div>
+
     <div style="text-align: center;">
-        <p id="user-info">Загрузка...</p>
+        <p id="user-info" style="opacity:0.6"></p>
         <h1 id="score">0</h1>
-        <button id="auto-btn" onclick="buyAuto()" style="margin: 15px 0; display: none;">Купить автоклик (1000)</button>
     </div>
-    <div onclick="clickHero(event)"><img id="hero-img" src="https://i.pinimg.com/736x/c1/9d/9b/c19d9b04f7678122a27b8787f7b578c9.jpg"></div>
+
+    <div id="hero-container" onclick="clickHero(event)">
+        <img id="hero-img" src="https://i.pinimg.com/736x/c1/9d/9b/c19d9b04f7678122a27b8787f7b578c9.jpg">
+    </div>
+
     <div class="modal" id="sett">
         <h3>Настройки</h3>
-        <select onchange="changeColor(this.value)"><option value="#ff4081">Розовый</option><option value="#ffffff">Белый</option><option value="#00f2fe">Голубой</option></select>
-        <button onclick="closeModal()">Закрыть</button>
+        <div class="setting">
+            <label>Цвет Текста/Неона:</label>
+            <select onchange="changeColor(this.value)">
+                <option value="#ff4081">Розовый Неон</option>
+                <option value="#ffffff">Белый Жемчуг</option>
+                <option value="#00f2fe">Голубой Лед</option>
+                <option value="#ff8c00">Оранжевый Закат</option>
+                <option value="#7fff00">Зеленый Лайм</option>
+                <option value="#9370db">Фиолетовый Маг</option>
+            </select>
+        </div>
+        <button onclick="closeM()">Закрыть</button>
     </div>
-    <div class="modal" id="chars"><h3>Персонажи</h3><p>🔒 Секретные герои скоро...</p><button onclick="closeModal()">Назад</button></div>
+
+    <div class="modal" id="chars"><h3>Персонажи</h3><p>🔒 Скоро...</p><button onclick="closeM()">Назад</button></div>
+
     <script>
-        let state = JSON.parse(localStorage.getItem('em_world_v3')) || { s: 0, n: '', c: '#ff4081', lv: 0, cost: 1000 };
-        function saveAcc() { state.n = document.getElementById('n-in').value || 'NoName'; document.getElementById('reg').style.display = 'none'; init(); }
-        function init() { if(state.n) document.getElementById('reg').style.display = 'none'; document.getElementById('user-info').innerText = `Игрок: ${state.n}`; changeColor(state.c); refresh(); }
-        function clickHero(e) { 
-            state.s++; const img = document.getElementById('hero-img');
+        let state = JSON.parse(localStorage.getItem('em_world_v4')) || { s: 0, n: '', c: '#ff4081' };
+        let isPressed = false;
+
+        // Рисуем фон (звезды)
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function initStars() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars = [];
+            for(let i=0; i<100; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2, v: Math.random()*0.5});
+        }
+        function drawStars() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            stars.forEach(s => {
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+                s.y += s.v; if(s.y > canvas.height) s.y = 0;
+            });
+            requestAnimationFrame(drawStars);
+        }
+        initStars(); drawStars();
+
+        function saveAcc() { state.n = document.getElementById('n-in').value || 'NoName'; init(); }
+        function init() { 
+            if(state.n) document.getElementById('reg').style.display = 'none';
+            document.getElementById('user-info').innerText = `Игрок: ${state.n}`;
+            changeColor(state.c); updateUI();
+        }
+
+        function clickHero(e) {
+            state.s++;
+            const img = document.getElementById('hero-img');
             img.classList.remove('jump'); void img.offsetWidth; img.classList.add('jump');
-            if(e) { const rect = img.getBoundingClientRect(); const x = (e.clientX - rect.left) / rect.width - 0.5; img.style.transform = `rotateY(${x * 35}deg)`; setTimeout(() => img.style.transform = 'rotateY(0deg)', 150); }
-            refresh();
+            
+            // Эффект +1
+            const ft = document.createElement('div');
+            ft.className = 'fly-text'; ft.innerText = '+1';
+            ft.style.left = (e ? e.clientX : window.innerWidth/2) + 'px';
+            ft.style.top = (e ? e.clientY : window.innerHeight/2) + 'px';
+            document.body.appendChild(ft);
+            setTimeout(() => ft.remove(), 800);
+
+            updateUI();
         }
-        function buyAuto() { if(state.s >= state.cost) { state.s -= state.cost; state.lv++; state.cost *= 2; refresh(); } }
-        function openModal(id) { document.getElementById(id).style.display = 'block'; }
-        function closeModal() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
-        function changeColor(hex) { state.c = hex; document.documentElement.style.setProperty('--accent', hex); }
-        function refresh() {
-            document.getElementById('score').innerText = Math.floor(state.s);
-            document.getElementById('auto-btn').style.display = (state.s >= 500 || state.lv > 0) ? 'inline-block' : 'none';
-            document.getElementById('auto-btn').innerText = `Автоклик (Ур. ${state.lv}) - ${state.cost}`;
-            localStorage.setItem('em_world_v3', JSON.stringify(state));
-        }
-        setInterval(() => { if(state.lv > 0) { state.s += (state.lv * 0.5); refresh(); } }, 1000);
+
+        // КЛАВИАТУРА: Пробел и Enter
+        window.onkeydown = (e) => {
+            if((e.code === 'Space' || e.code === 'Enter') && !isPressed) {
+                isPressed = true; clickHero();
+            }
+        };
+        window.onkeyup = (e) => { if(e.code === 'Space' || e.code === 'Enter') isPressed = false; };
+
+        function openM(id) { document.getElementById(id).style.display = 'block'; }
+        function closeM() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+        function changeColor(c) { state.c = c; document.documentElement.style.setProperty('--accent', c); }
+        function updateUI() { document.getElementById('score').innerText = state.s; localStorage.setItem('em_world_v4', JSON.stringify(state)); }
+        
         init();
     </script>
 </body>
